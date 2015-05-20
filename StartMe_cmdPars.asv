@@ -1,0 +1,20 @@
+function StartMe_cmdPars(edfName, edfPath, xmlName, xmlPath)
+    
+    global needOpenDialog;
+    needOpenDialog = logical(0);
+    
+   % global EdfFilePath;
+   % global EdfFileName;
+    global FilePath;
+    global FileName;
+    global XmlFilePath;
+    global XmlFileName;
+    %EdfFilePath = edfName;
+    %EdfFileName = edfPath;
+    FilePath = edfName;
+    FileName = 
+    XmlFilePath = xmlName;
+    XmlFileName = xmlPath;
+    
+    EDF_View({})
+end

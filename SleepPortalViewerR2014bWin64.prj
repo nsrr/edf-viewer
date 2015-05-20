@@ -1,0 +1,184 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="3200997461" file="C:\Users\xxz268\Downloads\SleepPortalViewer-1-30-2015\SleepPortalViewerR2014bWin64.prj" location="C:\Users\xxz268\Downloads\SleepPortalViewer-1-30-2015" name="SleepPortalViewerR2014bWin64" preferred-package-location="C:\Users\xxz268\Downloads\SleepPortalViewer-1-30-2015\SleepPortalViewerR2014bWin64\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
+    <param.appname>SleepPortalViewerR2014bWin64</param.appname>
+    <param.icon />
+    <param.icons />
+    <param.version>1.0</param.version>
+    <param.authnamewatermark />
+    <param.email />
+    <param.company />
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.guid />
+    <param.installpath.string>\SleepPortalViewerR2014bWin64\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_redistribution</param.output>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.embed.ctf>true</param.embed.ctf>
+    <param.server.ctf>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_testing\.ctf</param.server.ctf>
+    <param.server.readme>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_testing\readme.txt</param.server.readme>
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.required.mcr.products>
+      <item>35000</item>
+      <item>35001</item>
+    </param.required.mcr.products>
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.version />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.embed.ctf />
+      <param.server.ctf />
+      <param.server.readme />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\StartMe_cmdPars.m</file>
+    </fileset.main>
+    <fileset.resources>
+      <file>${PROJECT_ROOT}\blockEdfLoad.m</file>
+      <file>${PROJECT_ROOT}\BlockEdfLoadClass.m</file>
+      <file>${PROJECT_ROOT}\ChSelection.fig</file>
+      <file>${PROJECT_ROOT}\ChSelection.m</file>
+      <file>${PROJECT_ROOT}\confirm_close.fig</file>
+      <file>${PROJECT_ROOT}\confirm_close.m</file>
+      <file>${PROJECT_ROOT}\EDF_View.fig</file>
+      <file>${PROJECT_ROOT}\EDF_View.m</file>
+      <file>${PROJECT_ROOT}\EdfInfo.m</file>
+      <file>${PROJECT_ROOT}\end.jpg</file>
+      <file>${PROJECT_ROOT}\FilterSettings.fig</file>
+      <file>${PROJECT_ROOT}\FilterSettings.m</file>
+      <file>${PROJECT_ROOT}\left.jpg</file>
+      <file>${PROJECT_ROOT}\loadCompumedicsAnnotationsClass.m</file>
+      <file>${PROJECT_ROOT}\loadPSGAnnotationClass.m</file>
+      <file>${PROJECT_ROOT}\mapping-CHAT.csv</file>
+      <file>${PROJECT_ROOT}\mapping-Embla.csv</file>
+      <file>${PROJECT_ROOT}\mapping-SDO.csv</file>
+      <file>${PROJECT_ROOT}\modaldlg.fig</file>
+      <file>${PROJECT_ROOT}\modaldlg.m</file>
+      <file>${PROJECT_ROOT}\READ_ME.docx</file>
+      <file>${PROJECT_ROOT}\Readme.txt</file>
+      <file>${PROJECT_ROOT}\readXML.m</file>
+      <file>${PROJECT_ROOT}\readXML_Com.m</file>
+      <file>${PROJECT_ROOT}\reduce.mat</file>
+      <file>${PROJECT_ROOT}\right.jpg</file>
+      <file>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64.prj</file>
+      <file>${PROJECT_ROOT}\start.jpg</file>
+      <file>${PROJECT_ROOT}\StartMe_cmdPars.asv</file>
+      <file>${PROJECT_ROOT}\StartMe_cmdPars.m</file>
+      <file>${PROJECT_ROOT}\StartMe_dialogPars.m</file>
+    </fileset.resources>
+    <fileset.package>
+      <file>${PROJECT_ROOT}\blockEdfLoad.m</file>
+      <file>${PROJECT_ROOT}\BlockEdfLoadClass.m</file>
+      <file>${PROJECT_ROOT}\ChSelection.fig</file>
+      <file>${PROJECT_ROOT}\ChSelection.m</file>
+      <file>${PROJECT_ROOT}\confirm_close.fig</file>
+      <file>${PROJECT_ROOT}\confirm_close.m</file>
+      <file>${PROJECT_ROOT}\EDF_View.fig</file>
+      <file>${PROJECT_ROOT}\EDF_View.m</file>
+      <file>${PROJECT_ROOT}\EdfInfo.m</file>
+      <file>${PROJECT_ROOT}\end.jpg</file>
+      <file>${PROJECT_ROOT}\FilterSettings.fig</file>
+      <file>${PROJECT_ROOT}\FilterSettings.m</file>
+      <file>${PROJECT_ROOT}\left.jpg</file>
+      <file>${PROJECT_ROOT}\loadCompumedicsAnnotationsClass.m</file>
+      <file>${PROJECT_ROOT}\loadPSGAnnotationClass.m</file>
+      <file>${PROJECT_ROOT}\mapping-CHAT.csv</file>
+      <file>${PROJECT_ROOT}\mapping-Embla.csv</file>
+      <file>${PROJECT_ROOT}\mapping-SDO.csv</file>
+      <file>${PROJECT_ROOT}\modaldlg.fig</file>
+      <file>${PROJECT_ROOT}\modaldlg.m</file>
+      <file>${PROJECT_ROOT}\READ_ME.docx</file>
+      <file>${PROJECT_ROOT}\Readme.txt</file>
+      <file>${PROJECT_ROOT}\readXML.m</file>
+      <file>${PROJECT_ROOT}\readXML_Com.m</file>
+      <file>${PROJECT_ROOT}\reduce.mat</file>
+      <file>${PROJECT_ROOT}\right.jpg</file>
+      <file>${PROJECT_ROOT}\SleepPortalViewerR2014bWin64.prj</file>
+      <file>${PROJECT_ROOT}\start.jpg</file>
+      <file>${PROJECT_ROOT}\StartMe_cmdPars.asv</file>
+      <file>${PROJECT_ROOT}\StartMe_cmdPars.m</file>
+      <file>${PROJECT_ROOT}\StartMe_dialogPars.m</file>
+    </fileset.package>
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_testing" name="readme.txt" optional="true">C:\Users\xxz268\Downloads\SleepPortalViewer-1-30-2015\SleepPortalViewerR2014bWin64\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_testing" name="splash.png" optional="false">C:\Users\xxz268\Downloads\SleepPortalViewer-1-30-2015\SleepPortalViewerR2014bWin64\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\SleepPortalViewerR2014bWin64\for_testing" name="SleepPortalViewerR2014bWin64.exe" optional="false">C:\Users\xxz268\Downloads\SleepPortalViewer-1-30-2015\SleepPortalViewerR2014bWin64\for_testing\SleepPortalViewerR2014bWin64.exe</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2014b</root>
+      <toolboxes>
+        <toolbox name="fixedpoint" />
+        <toolbox name="matlabcoder" />
+      </toolboxes>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.1</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
