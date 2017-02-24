@@ -1,4 +1,4 @@
-EDF View
+EDF Viewer
 
 EDF/XML viewer
 
