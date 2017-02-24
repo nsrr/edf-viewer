@@ -72,7 +72,6 @@ classdef loadPSGAnnotationClass
             % Load Grass file
             filename = obj.fileName;
             fid = fopen(filename);      
-            
             % Process if file is open
             if fid > 0
                 fileTxt = fread(fid)';
@@ -80,7 +79,6 @@ classdef loadPSGAnnotationClass
                 msg = sprintf('Could not open %s', filename);
                 error(msg);
             end
-            
             %----------------------------------------------- Resolve 'SDO'
             % Temp = fread(fid,[1 inf],'uint8'); % not efficient
             obj.isSDO = strfind(fileTxt,'SDO:');
@@ -93,7 +91,6 @@ classdef loadPSGAnnotationClass
                 errMsg{end+1} = 'Failed to read XML file';
                 error('Failed to read XML file %s.',xmlfile);
             end
-            
             [ScoredEvent, SleepStageNames, EpochLength, obj.sleepStageValues] = ...
                 parseAndValidateNodes(xdoc);            
            
@@ -135,13 +132,13 @@ classdef loadPSGAnnotationClass
                 rootNode = xmldoc.getFirstChild;
                 rootNodeTag = rootNode.getTagName;
                 obj.AnnotationType = rootNodeTag;
-                
+
                 Temp = xmldoc.getElementsByTagName('EpochLength');
                 EpochLength = str2double(Temp.item(0).getTextContent);
                 
                 TempVendor = xmldoc.getElementsByTagName('SoftwareVersion');
                 obj.vendorName = TempVendor.item(0).getTextContent;                               
-
+                
                 events = xmldoc.getElementsByTagName('ScoredEvent');
                 % Add check code to deal with the missing subfield(Start/Duration, etc)
                 if events.getLength > 0
@@ -203,7 +200,7 @@ classdef loadPSGAnnotationClass
                                 SleepStageNames{end+1} = eventConceptText;
                             end
                             
-                            if i ~= 0 & strcmp(eventTypeText, 'Stages') == 0
+                            if i ~= 0 %&& strcmp(eventTypeText, 'Stages') == 0
                                 try
                                     InputChName = char(events.item(i).getElementsByTagName('SignalLocation').item(0).getTextContent);
                                     % is InputChName is empty, how to deal with it:

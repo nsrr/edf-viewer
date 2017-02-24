@@ -382,8 +382,8 @@ classdef BlockEdfLoadClass
     
         % Define check parameters
         MAX_SIGNALS = 512;
-        DIG_MIN = -32768;       % digital min check: (-32768, -62768)
-        DIG_MAX = 32767;        % digital max check  (32767,  62767)
+        DIG_MIN = -62768;       % digital min check: (-32768, -62768)
+        DIG_MAX = 62767;        % digital max check  (32767,  62767)
         
     end
     %------------------------------------------------------- Public Methods

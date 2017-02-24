@@ -22,7 +22,7 @@ function varargout = EDF_View(varargin)
 
 % Edit the above text to modify the response to help EDF_View
 
-% Last Modified by GUIDE v2.5 22-Apr-2015 20:38:58
+% Last Modified by GUIDE v2.5 04-Aug-2016 09:24:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -153,6 +153,10 @@ handles.SelectedCh = [];
 handles.FilterPara = [];
 handles.Sel = 1; % Select first signal
 handles.eventIndexInCategory = []; % for each category, this list contain the event index in the annotation
+handles.annotationTextPosition = []; % for select annotation
+handles.SelectedAnnotation=1;% for highlight annotation
+handles.SelectedAnnotationIndex=0;
+handles.SelectedAnnotationName='';
 
 % Subset of channel selection information
 handles.ChInfo = [];
@@ -633,16 +637,20 @@ if handles.hasAnnotation
     end
     StartTimes = StartTimes - get(handles.SliderTime, 'value');
     [StartTimes, Index] = min(abs(StartTimes));
+    fprintf('index:%d',Index);
     if Index < length(handles.ScoredEvent)
         set(handles.ListBoxComments, 'value', Index); % TODO 
     else
         set(handles.ListBoxComments, 'value', length(handles.ScoredEvent)-1)
     end
+    handles.SelectedAnnotation=1;
+    handles.SelectedAnnotationIndex=Index;
+    handles.SelectedAnnotationName=handles.ScoredEvent(Index).EventConcept;
 end
 
 % Get, update, and display data
 handles=DataLoad(handles);
-guidata(hObject,handles);
+%guidata(hObject,handles);
 handles = UpDatePlot(hObject,handles);
 guidata(hObject, handles);
 
@@ -768,6 +776,9 @@ end
 
 % Process Annotations, if present
 if handles.hasAnnotation
+    annotationToShow={};
+    SelectIndex=[];
+    annotationcount=0;
     % plot sleep stage line
     popup_id = get(handles.PopMenuWindowTime,'Value');
     epoch_width = handles.epoch_menu_values(popup_id);
@@ -781,8 +792,10 @@ if handles.hasAnnotation
     
     % Get scored event time
     Start = [];
+    End = [];
     for i=1:length(handles.ScoredEvent)
         Start(i) = handles.ScoredEvent(i).Start;
+        End(i) = Start(i)+handles.ScoredEvent(i).Duration;
     end
     
     CurrentTime = get(handles.SliderTime,'value');
@@ -793,29 +806,36 @@ if handles.hasAnnotation
         % Index: event index that falls in the current slider time and 
         %        current slider time plus window time
         Index = find(Start>CurrentTime & Start < (CurrentTime+WindowTime));
-        Index = Index(Index~=1); % do not record 'Recording Start Time', a.k.a the first scored event        
+        Index = Index(Index~=1); % do not record 'Recording Start Time', a.k.a the first scored event 
         fprintf('Index<');
         for i=1:length(Index)
-            fprintf('#%d: %s ',Index(i), handles.ScoredEvent(Index(i)).EventConcept);
+            fprintf('#%d: %s, StartTime=%d',Index(i), handles.ScoredEvent(Index(i)).EventConcept, handles.ScoredEvent(Index(i)).Start-CurrentTime);
         end
         disp('>');
-        
         disp(SelectedChMap);
         if ~isempty(Index)
-            Start = Start(Index)-CurrentTime; % between 0 and Start(Index)
+            %Start = Start(Index)-CurrentTime; % between 0 and Start(Index)
+            %End = End(Index)-CurrentTime;
             ChNum = [];
+            SelectIndex=[];
             ChTxt = {}; % signal label that should be displayed, improved support
                         % for displaying montages
             ChDuration = []; % Debug: duration for each event to annotated in green
             for j = Index           
-                fprintf('ScoredEvent: %d, InputCh: %s\n',j, [handles.ScoredEvent(j).InputCh, ' ']);
+                fprintf('ScoredEvent: %d, InputCh: %s, StartTime: %d\n',j, [handles.ScoredEvent(j).InputCh, ' '], Start(j)-CurrentTime);
                 inputChannel = [handles.ScoredEvent(j).InputCh, ' '];
                 inputChannel(inputChannel == ' ') = []; % remove white space
                 for i=1:size(SelectedChMap, 1)
                     if strncmpi(SelectedChMap{i,1}, inputChannel,...
-                            length(handles.ScoredEvent(j).InputCh+1)) & isempty(strfind(lower(handles.ScoredEvent(j).EventType), 'stages'))
+                            length(handles.ScoredEvent(j).InputCh+1)) % && isempty(strfind(lower(handles.ScoredEvent(j).EventType), 'stages'))
+          
                         fprintf('<%s, %s>\n', SelectedChMap{i,1}, [handles.ScoredEvent(j).InputCh, ' ']);
-                        ChNum=[ChNum i];
+                        if strcmp([handles.ScoredEvent(j).InputCh, ' '],' ')==1
+                            ChNum=[ChNum 0];
+                        else
+                            ChNum=[ChNum i];
+                        end
+                        SelectIndex=[SelectIndex j];
                         % handle SpO2 event annotation display
                         ChTxt{end+1} = handles.ScoredEvent(j).EventConcept;
                         if ~isempty(handles.ScoredEvent(j).SpO2Baseline) &&... 
@@ -829,57 +849,119 @@ if handles.hasAnnotation
                         end
                         ChDuration = [ChDuration handles.ScoredEvent(j).Duration];
                         break;
+                    
                     end
                 end                
             end
-            % DEBUG
-            fprintf('\n');
-            fprintf('Channel to plot:\n');
-            for i=1:length(ChNum)
-                fprintf('[%d %s %s duration: %d]\n', ChNum(i), SelectedChMap{ChNum(i),1}, ChTxt{i}, ChDuration(i));
-            end
-            fprintf('\n');
+            %Yan:display annotation in annotation box
             
-            for i=1:length(Index)
-                Temp=Start(i)+handles.ScoredEvent(Index(i)).Duration;
-                
+            for i=1:length(ChNum)
+                if ChNum(i)==0
+                    continue;
+                end
+                Temp1=fix(handles.ScoredEvent(SelectIndex(i)).Start / 30) + 1;
+                timestring = datestr(datenum(handles.FileInfo.StartTime, 'HH.MM.SS') + seconds(handles.ScoredEvent(SelectIndex(i)).Start), 'HH:MM:SS');
+                annotationToShow{i}= strcat(int2str(Temp1),'-',timestring,'-',SelectedChMap{ChNum(i),1},'-', ChTxt{i});
+                if handles.SelectedAnnotationIndex~=0
+                    if SelectIndex(i)==handles.SelectedAnnotationIndex && strcmp(ChTxt{i},handles.SelectedAnnotationName)==1
+                        handles.SelectedAnnotation=i;
+                        handles.SelectedAnnotationIndex=0;
+                        fprintf('selected anno:%d\n', handles.SelectedAnnotation);
+                    end
+                end
+            end
+            %set(handles.annotationbox,'string',annotationToShow);
+            %set(handles.annotationbox, 'Value', handles.SelectedAnnotation);
+            %fprintf('SelectAnno Index:%d\n',handles.SelectedAnnotation);
+            %End Yan
+            
+            % DEBUG
+            %fprintf('\n');
+            %fprintf('Channel to plot:\n');
+            %for i=1:length(ChNum)
+            %    fprintf('[%d %d %s %s duration: %d]\n', SelectIndex(i), ChNum(i), SelectedChMap{ChNum(i),1}, ChTxt{i}, ChDuration(i));
+            %end
+            %fprintf('\n');
+            
+            %Yan:Fix overlap
+            overlapm=[];
+          
+            for i=1:length(SelectIndex) 
+                if ChNum(i)==0
+                    continue;
+                end
+                overlap=0;
+                overlapm(i)=0;
+                %Temp=Start(i)+handles.ScoredEvent(Index(i)).Duration;
+                TempStart=handles.ScoredEvent(SelectIndex(i)).Start-CurrentTime;
+                Temp=TempStart+handles.ScoredEvent(SelectIndex(i)).Duration;
+                if i>1
+                    %check if annotation overlap exists 
+                    %and start points are too close
+                    for k=1:(i-1)
+                        eventType = lower(handles.ScoredEvent(SelectIndex(i)).EventType);
+                        %if ~isempty(ChNum) && isempty(strfind(eventType, 'sleep')) && isempty(strfind(eventType, 'stages'))...
+                        if ~isempty(ChNum) && i <= length(ChNum) && k <= length(ChNum)
+                            
+                            if ChNum(i)==ChNum(k) && overlap==overlapm(k) && abs(handles.ScoredEvent(SelectIndex(i)).Start-handles.ScoredEvent(SelectIndex(k)).Start)<WindowTime/8
+                                overlap=overlap+1;
+                                k=1;
+                            end
+                        
+                        end
+                    end
+                    overlapm(i)=overlap;
+                end
                 if Temp>WindowTime
                     Temp=WindowTime;
                 end
                 
                 % do not plot 'Recording Start Time' event and 'Sleep
                 % Staging' events
-                eventType = lower(handles.ScoredEvent(Index(i)).EventType);
-                if ~isempty(ChNum) && isempty(strfind(eventType, 'sleep')) && isempty(strfind(eventType, 'stages'))...
-                    && i <= length(ChNum)
+                eventType = lower(handles.ScoredEvent(SelectIndex(i)).EventType);
+                %if ~isempty(ChNum) && isempty(strfind(eventType, 'sleep')) && isempty(strfind(eventType, 'stages'))...
+                if ~isempty(ChNum)    && i <= length(ChNum)
+                
+                        annotationcount = annotationcount+1;
+                        if annotationcount == handles.SelectedAnnotation
+                            color=[0 1 0];
+                            fa=0.5;
+                        else
+                            color=[mod(190+overlap*100,255) mod(222-overlap*200,255) mod(205-overlap*100,255)]/255;
+                            fa=0.1;
+                        end
                         % TODO: draw green area...
-                        forwardFill = fill([Start(i)  Temp Temp Start(i)], ...
-                            [-ChNum(i)-3/2 -ChNum(i)-3/2 -ChNum(i)-1/2 -ChNum(i)-1/2 ]+2 ...
-                            ,[190 222 205]/255, 'FaceAlpha', 0.6);
-                    
-                        plot([Start(i)  Temp Temp Start(i) Start(i)], ...
-                            [-ChNum(i)-3/2 -ChNum(i)-3/2 -ChNum(i)-1/2 -ChNum(i)-1/2 -ChNum(i)-3/2]+2 ...
-                            ,'Color',[190 222 205]/255);
-                        forwardText = text(Start(i),-ChNum(i)-0.64+2,ChTxt(i),'FontWeight','bold','FontSize',9, 'Parent', handles.axes1);
-                        forwardText.BackgroundColor = 'w';
+                        forwardFill = fill([TempStart  Temp Temp TempStart], ...
+                            [-ChNum(i)-3/2 -ChNum(i)-3/2 -ChNum(i)-1/2-mod(overlap*0.205,1) -ChNum(i)-1/2-mod(overlap*0.205,1) ]+2 ...
+                            ,color, 'FaceAlpha', fa);
+                        forwardPlot=plot([TempStart  Temp Temp TempStart], ...
+                            [-ChNum(i)-3/2 -ChNum(i)-3/2 -ChNum(i)-1/2-mod(overlap*0.205,1) -ChNum(i)-1/2-mod(overlap*0.205,1)]+2 ...
+                            ,'Color',color);
+
+                        forwardText = text(TempStart,-ChNum(i)-0.64+2-mod(overlap*0.205,1),ChTxt(i),'FontWeight','bold','FontSize',9, 'Parent', handles.axes1,'Rotation',0);
+                        forwardText.BackgroundColor = 'none';
                         forwardText.Clipping = 'on';
-                        set(forwardFill,'edgecolor',[191 223 206]/255);
-                        uistack(forwardText, 'up', 2);
-                        uistack(forwardFill, 'down', 1);
-                end                
-            end                        
+                        set(forwardFill,'edgecolor',[mod(190+overlap*100,255) mod(222-overlap*200,255) mod(205-overlap*100,255)]/255);
+                        if annotationcount == handles.SelectedAnnotation
+                            uistack(forwardFill, 'top');
+                            uistack(forwardText, 'top');
+                            uistack(forwardPlot, 'top');
+                        else
+                            uistack(forwardFill, 'bottom');
+                            uistack(forwardText, 'bottom');
+                            uistack(forwardPlot, 'bottom');
+                        end
+                
+                end
+            end   
+            
         end
         
         % Reverse Plot
-        EndTime = [];
-        Start = [];
-        for i=1:length(handles.ScoredEvent)
-            EndTime(i) = handles.ScoredEvent(i).Start + handles.ScoredEvent(i).Duration;
-            Start(i) = handles.ScoredEvent(i).Start;
-        end
+        
         % find end index in current window
-        IndexReverse = find((EndTime)>=CurrentTime & EndTime <= (CurrentTime+WindowTime));
-        IndexReverse = [IndexReverse find(Start<=CurrentTime & EndTime >= (CurrentTime+WindowTime) )];
+        IndexReverse = find((End)>=CurrentTime & End <= (CurrentTime+WindowTime));
+        IndexReverse = [IndexReverse find(Start<=CurrentTime & End >= (CurrentTime+WindowTime) )];
         % IndexReverse = [IndexReverse find(Start<=CurrentTime & EndTime>=CurrentTime & EndTime <= (CurrentTime+WindowTime))];
         IndexReverse = IndexReverse(IndexReverse~=1);
         
@@ -887,49 +969,104 @@ if handles.hasAnnotation
             IndexReverse(IndexReverse==Index(i))=[];
         end
         
-        Start = Start(IndexReverse)-CurrentTime;
+        Startr = Start(IndexReverse)-CurrentTime;
         % Start = Start(Start>=0);
         if ~isempty(IndexReverse)
             
-            ChNum=[];
-            ChTxt = {};
-            ChDuration = []; % Debug: duration for each event to annotated in green
+            ChNumr=[];
+            ChTxtr = {};
+            ChDurationr = []; % Debug: duration for each event to annotated in green
             IndexReverse2Plot = [];
+            SelectIndexr = [];
             for j=IndexReverse
                 inputChannel = [handles.ScoredEvent(j).InputCh, ' '];
                 inputChannel(inputChannel == ' ') = []; % remove white space
                 for i=1:size(SelectedChMap, 1)
                     if strncmpi(SelectedChMap{i,1}, inputChannel,... 
-                            length(handles.ScoredEvent(j).InputCh+1)) && isempty(strfind(lower(handles.ScoredEvent(j).EventType), 'stages'))
+                            length(handles.ScoredEvent(j).InputCh+1))% && isempty(strfind(lower(handles.ScoredEvent(j).EventType), 'stages'))
+                         
                         IndexReverse2Plot=[IndexReverse2Plot j];
-                        ChNum=[ChNum i];
+                        if strcmp([handles.ScoredEvent(j).InputCh, ' '],' ')==1
+                            ChNumr=[ChNumr 0];
+                        else
+                            ChNumr=[ChNumr i];
+                        end
+                        SelectIndexr=[SelectIndexr j];
                         % handle SpO2 event annotation display
-                        ChTxt{end+1} = handles.ScoredEvent(j).EventConcept;
+                        ChTxtr{end+1} = handles.ScoredEvent(j).EventConcept;
                         if ~isempty(handles.ScoredEvent(j).SpO2Baseline) &&... 
                             ~isempty(handles.ScoredEvent(j).SpO2Nadir)
                             delta = (handles.ScoredEvent(j).SpO2Baseline - handles.ScoredEvent(j).SpO2Nadir) /...
                                 handles.ScoredEvent(j).SpO2Baseline;
                             deltaStr = sprintf('%.0f', delta * 100);
-                            ChTxt{end}=strcat(ChTxt{end}, ':');
-                            ChTxt{end}=strcat(ChTxt{end}, deltaStr);
-                            ChTxt{end}=strcat(ChTxt{end}, '%');
+                            ChTxtr{end}=strcat(ChTxtr{end}, ':');
+                            ChTxtr{end}=strcat(ChTxtr{end}, deltaStr);
+                            ChTxtr{end}=strcat(ChTxtr{end}, '%');
                         end
-                        ChDuration = [ChDuration handles.ScoredEvent(j).Duration];
+                        ChDurationr = [ChDurationr handles.ScoredEvent(j).Duration];
                         break;
+                    
                     end
                 end
             end
-            
-            fprintf('\n');
-            fprintf('Channel to plot in reverse:\n');
-            for i=1:length(ChNum)
-                fprintf('[%d %s %s duration: %d]\n', ChNum(i), SelectedChMap{ChNum(i),1}, ChTxt{i}, ChDuration(i));
+            %Yan 10/31/16:display reverse annotation in annotation box 
+            sizeOfATS=length(annotationToShow);
+            for i=1:length(ChNumr)
+                if ChNumr(i)==0
+                    continue;
+                end
+                Temp1=fix(handles.ScoredEvent(SelectIndexr(i)).Start / 30) + 1;
+                timestring = datestr(datenum(handles.FileInfo.StartTime, 'HH.MM.SS') + seconds(handles.ScoredEvent(SelectIndexr(i)).Start), 'HH:MM:SS');
+                annotationToShow{sizeOfATS+i}= strcat(int2str(Temp1),'-',timestring,'-',SelectedChMap{ChNumr(i),1},'-', ChTxtr{i});
+                if handles.SelectedAnnotationIndex~=0
+                    if SelectIndexr(i)==handles.SelectedAnnotationIndex && strcmp(ChTxtr{i},handles.SelectedAnnotationName)==1
+                        handles.SelectedAnnotation=sizeOfATS+i;
+                        handles.SelectedAnnotationIndex=0;
+                    end
+                end
             end
-            fprintf('\n');
-            
+            %set(handles.annotationbox,'string',annotationToShow);
+            %set(handles.annotationbox, 'Value', handles.SelectedAnnotation);
+            %End Yan
+            %debug
+            %fprintf('\n');
+            %fprintf('Channel to plot in reverse:\n');
+            %for i=1:length(ChNumr)
+            %    fprintf('[%d %s %s duration: %d]\n', ChNumr(i), SelectedChMap{ChNumr(i),1}, ChTxtr{i}, ChDurationr(i));
+            %end
+            %fprintf('\n');
+            overlapmr=[];
             for i=1:length(IndexReverse2Plot)
+                if ChNumr(i)==0
+                    continue;
+                end
+                %Yan:fix overlap
+                overlap=0;
+                overlapmr(i)=0;
+                for j=1:i
+                    for k=1:(length(SelectIndex))
+                        %bug fixed, Index=>IndexReverse
+                        eventType = lower(handles.ScoredEvent(IndexReverse(i)).EventType);
+                        %if ~isempty(ChNumr) && isempty(strfind(eventType, 'sleep')) && isempty(strfind(eventType, 'stages'))...
+                        if ~isempty(ChNumr)    && k <= length(ChNum)
+                        
+                           % fprintf('ChNumr(i)=%d,ChNum(k)=%d,overlap=%d,overlapm=%d,overlapmr=%d\n',ChNumr(i),ChNum(k),overlap, overlapm(k),overlapmr(j));
+                            if (ChNumr(i)==ChNum(k) && overlap==overlapm(k) && handles.ScoredEvent(SelectIndex(k)).Start-CurrentTime<WindowTime/8)
+                                overlap=overlap+1;
+                                k=1;
+                            elseif (i~=j && ChNumr(i)==ChNumr(j) && overlap==overlapmr(j))
+                                overlap=overlap+1;
+                                j=1;
+                                break;
+                            end
+                       
+                        end
+                    end
+                end
+                
+                overlapmr(i)=overlap;
                 % Set boundaries to plot
-                Temp=Start(i)+handles.ScoredEvent(IndexReverse2Plot(i)).Duration;
+                Temp=Startr(i)+handles.ScoredEvent(IndexReverse2Plot(i)).Duration;
                 if Temp < 0.001 && Temp > 0
                     Temp = 0;
                 elseif Temp > WindowTime
@@ -940,28 +1077,39 @@ if handles.hasAnnotation
                 % Staging' events
                 eventType = lower(handles.ScoredEvent(IndexReverse2Plot(i)).EventType);
                 eventName = lower(handles.ScoredEvent(IndexReverse2Plot(i)).EventConcept);
-                fprintf('i=%d eventName=%s\n', i, eventName);
-                if ~isempty(ChNum) && isempty(strfind(eventType, 'sleep')) && isempty(strfind(eventType, 'stages'))
+                %fprintf('i=%d eventName=%s,overlap=%d\n', i, eventName,overlap);
+                if ~isempty(ChNumr) %&& isempty(strfind(eventType, 'sleep')) && isempty(strfind(eventType, 'stages'))
+                
+                    annotationcount = annotationcount+1;
+                    if annotationcount == handles.SelectedAnnotation
+                            color=[0 1 0];
+                            fa=0.5;
+                    else
+                            color=[mod(230+overlap*100,255) 222 205]/255;
+                            fa=0.1;
+                    end
                     if Temp > 0
                         % Fill green bar under selected channel
                         reverseFill = fill([0  Temp Temp 0], ...
-                            [-ChNum(i)-3/2 -ChNum(i)-3/2 -ChNum(i)-1/2 -ChNum(i)-1/2 ]+2 ...
-                            ,[190 222 205]/255, 'FaceAlpha', 0.6); 
+                            [-ChNumr(i)-3/2 -ChNumr(i)-3/2 -ChNumr(i)-1/2-mod(overlap*0.205,1) -ChNumr(i)-1/2-mod(overlap*0.205,1) ]+2 ...
+                            ,color, 'FaceAlpha', fa); 
 
                         plot([0  Temp Temp 0 0], ...
-                            [-ChNum(i)-3/2 -ChNum(i)-3/2 -ChNum(i)-1/2 -ChNum(i)-1/2 -ChNum(i)-3/2]+2 ...
-                            ,'Color',[190 222 205]/255); 
+                            [-ChNumr(i)-3/2 -ChNumr(i)-3/2 -ChNumr(i)-1/2-mod(overlap*0.205,1) -ChNumr(i)-1/2-mod(overlap*0.205,1) -ChNumr(i)-3/2]+2 ...
+                            ,'Color',color); 
     
-                        reverseText = text(0,-ChNum(i)-0.64+2,ChTxt(i),'FontWeight','bold','FontSize',9, 'Parent', handles.axes1);
-                        reverseText.BackgroundColor = 'w';
+                        reverseText = text(0,-ChNumr(i)-0.64+2-mod(overlap*0.205,1),ChTxtr(i),'FontWeight','bold','FontSize',9, 'Parent', handles.axes1,'Rotation',0);
+                        reverseText.BackgroundColor = 'none';
                         reverseText.Clipping = 'on';
-                        set(reverseFill,'edgecolor',[191 223 206]/255);
-                        uistack(reverseText, 'up', 2);
-                        uistack(reverseFill, 'down', 1);
+                        set(reverseFill,'edgecolor',[mod(230+overlap*100,255) 222 205]/255); 
+                        uistack(reverseText, 'top');
+                        uistack(reverseFill, 'bottom');
                     end
                 end
             end  
         end
+        set(handles.annotationbox,'string',annotationToShow);
+        set(handles.annotationbox, 'Value', handles.SelectedAnnotation);
     end
     
 % Set epoch values based on slider time
@@ -996,8 +1144,59 @@ for i=1:size(SelectedCh,1)
     PlotColor = FilterPara{i}.Color;
     Y = (handles.Data{i}*FilterPara{i}.ScalingFactor-Counter - ...
         mean(handles.Data{i}*FilterPara{i}.ScalingFactor-Counter))+(1-i);
-    p = plot(Time,Y,'LineWidth',0.01,'color',PlotColor);
-    uistack(p, 'bottom');
+    p = plot(Time,Y,'LineWidth',1.5,'color',PlotColor);
+    %Yan: dispaly value for A-Pulse and SPO2s
+    if strcmp(SelectedChMap{i,1},'A-Pulse')==1||strcmp(SelectedChMap{i,1},'A-SpO2')==1
+        fprintf('Channel:%s\n', SelectedChMap{i,1});
+        Data = handles.Data{i};
+        if handles.ChInfo.PhyMin(i)>0
+            Data=-Data;
+        end
+        Data = Data*(handles.ChInfo.DiMax(i)-handles.ChInfo.DiMin(i));
+        Data = Data+(handles.ChInfo.DiMax(i)+handles.ChInfo.DiMin(i))/2;
+    
+        % scale the data to get the actual value
+        Slope  = (handles.ChInfo.PhyMax(i)-handles.ChInfo.PhyMin(i))/(handles.ChInfo.DiMax(i)-handles.ChInfo.DiMin(i));
+        Value = (Data-handles.ChInfo.DiMin(i))*Slope + handles.ChInfo.PhyMin(i);
+        period=ceil(WindowTime/10);
+        if period<30
+            period=2;
+        end
+        j=1;
+        while j<length(handles.Data{i})-period
+            adjust1=-0.07;
+            [maxv maxj] = max(Value(j:(j+period)));
+            [minv minj] = min(Value(j:(j+period)));
+            if j==1
+                text(Time(j),Y(j)+adjust1,num2str(Value(j),'%.2f'));
+            end
+            if abs(maxv-minv)>abs(3*(handles.ChInfo.PhyMax(i)-handles.ChInfo.PhyMin(i))/100)
+                fprintf('period:%d,maxj:%d,minj:%d\n', period,maxj+j,minj+j);
+                if (j+maxj-1)~=j && (j+maxj-1)~=j+period
+                    text(Time(j+maxj-1),Y(j+maxj-1)+adjust1,num2str(Value(j+maxj-1),'%.2f'));
+                end
+                if (j+minj-1)~=j && (j+minj-1)~=j+period
+                    text(Time(j+minj-1),Y(j+minj-1)+adjust1,num2str(Value(j+minj-1),'%.2f'));
+                end
+                %text(Time(j),Y(j)+adjust1,num2str(Value(j),'%.2f'));
+                %text(Time(j+1),Y(j+1)+adjust2,num2str(Value(j+1),'%.2f'));
+                if period>=30
+                    j=j+period-1;
+                end
+            end
+            j=j+1;
+        end
+        %for j=1:(length(handles.Data{i})-1)
+        %    if abs(Value(j)-Value(j+1))>=1
+        %        text(Time(j),Y(j)-0.12,num2str(Value(j),'%.2f'));
+        %        text(Time(j+1),Y(j+1)-0.12,num2str(Value(j+1),'%.2f'));
+        %    elseif j==1
+        %        text(Time(j),Y(j)-0.12,num2str(Value(j),'%.2f'));
+        %   end
+        %end
+    end
+    %end Yan jan 22, 2017
+    uistack(p, 'top');
     
     % Not sure is this is still being used, 1/27/2013, dad
     Counter = Counter + 1 ;
@@ -1015,8 +1214,9 @@ index = find(data_range ~= 0);
 handles.auto_scale_factor(index) = handles.auto_scale_height./data_range(index);
 guidata(hObject, handles);
 
-forwardText.BackgroundColor = 'w';
-reverseText.BackgroundColor = 'w';
+%yan
+%forwardText.BackgroundColor = 'w';
+%reverseText.BackgroundColor = 'w';
 
 
 % Stage information
@@ -1148,6 +1348,7 @@ set(c_axes, 'Color', 'none', 'XColor', [192 192 1]/255, 'XGrid', 'on', ...
     'YColor',[192 192 1]/255, 'YGrid','on','XTickLabel',[], ...
     'YTickLabel',[],'XTick',xtick,'YTick',ytick,'XLim',xlim,'YLim',ylim1);
 
+%handles.SelectedAnnotation=1;%reset annotation selection
 % Set epoch numbers
 % Update handles
 % (list handle updates here)
@@ -1259,7 +1460,9 @@ fprintf('Selected event number: SelNum# %d\n', SelNum);
 fprintf('Selected event name: %s\n', handles.ScoredEvent(SelNum).EventConcept);
 fprintf('handles.ScoredEvent size: # %d\n', length(handles.ScoredEvent));
 fprintf('Sleep Stages Number: # %d\n', length(handles.SleepStages));
-
+handles.SelectedAnnotation=1;
+handles.SelectedAnnotationIndex=SelNum;
+handles.SelectedAnnotationName=handles.ScoredEvent(SelNum).EventConcept;
 % Change tooltip on selecting event
 set(handles.ListBoxComments, 'ToolTip', handles.ScoredEvent(SelNum).ToolTip);
 
@@ -1436,6 +1639,7 @@ else
     clearOpenCache;
     set(handles.pmAnnotations, 'string', ''); 
     set(handles.ListBoxComments, 'string', '');
+    set(handles.annotationbox, 'string', ''); 
 end
 
 global needOpenDialog;
@@ -1457,7 +1661,7 @@ if FileNameAnn == 0 & FilePath == 0
 end
 
 try 
-    annObj = loadPSGAnnotationClass([FilePath, FileNameAnn]);    
+    annObj = loadPSGAnnotationClass([FilePath, FileNameAnn]);   
     % annObj.loadFile process:
     %   1. Open file
     %   2. parseNodes, including check of tag existance
@@ -1553,6 +1757,7 @@ if ~(sum(FileNameAnn == 0)) % if this file name is not empty string, use ~isempt
     Temp = cell(1, length(handles.ScoredEvent) - 1);
     handles.eventIndexInCategory(1) = 1;
     for i=2:length(handles.ScoredEvent)
+        %Yan: use the func here for current annotation box
        Temp1 = fix(handles.ScoredEvent(i).Start / 30) + 1;
 %        Temp{i - 1}= [num2str(Temp1) ' - ' datestr(handles.ScoredEvent(i).Start/86400,'HH:MM:SS - ') handles.ScoredEvent(i).EventConcept];
        
@@ -1823,7 +2028,7 @@ xLim = get(handles.axes1,'xlim');
 yLim = get(handles.axes1,'ylim');
 
 % check is current point is in time series plot
-if (Loc(3)>yLim(1) & Loc(3)<yLim(2) & Loc(1)>xLim(1) & Loc(1)<xLim(2))
+if (Loc(3)>yLim(1) && Loc(3)<yLim(2) && Loc(1)>xLim(1) && Loc(1)<xLim(2))
     
     
     Sel = round(Loc(1,2));
@@ -1872,6 +2077,9 @@ end
 
 guidata(hObject,handles);
 
+function AnnotationSelection(hObject, eventdata, handles)  
+
+fprintf('selected');
 
 %-------------------------------------------- figure1_WindowButtonMotionFcn
 % --- Executes on mouse motion over figure - except title and menu.
@@ -2415,3 +2623,30 @@ function output=parseLine(line)
     end    
 
 % ========================= Helper Functions END =================================
+
+
+% --- Executes on selection change in annotationbox.
+function annotationbox_Callback(hObject, eventdata, handles)
+% hObject    handle to annotationbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns annotationbox contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from annotationbox
+
+handles.SelectedAnnotation=get(hObject,'Value');                   
+handles.SelectedAnnotationIndex=0;
+guidata(hObject,handles);
+handles = UpDatePlot(hObject,handles);
+
+% --- Executes during object creation, after setting all properties.
+function annotationbox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to annotationbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
