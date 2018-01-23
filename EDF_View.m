@@ -1227,7 +1227,7 @@ if handles.hasSleepStages && handles.hasAnnotation
      % plot sleep states
      currentTime = get(handles.SliderTime,'value');
      
-     idx = [1:WindowTime]+currentTime;
+     idx = [0:WindowTime]+currentTime;
      idx(idx>length(handles.SleepStages))=length(handles.SleepStages);
      Temp=handles.SleepStages(idx);
      
@@ -1240,6 +1240,35 @@ if handles.hasSleepStages && handles.hasAnnotation
      fprintf('handles.SleepStage length: %d\n', length(handles.SleepStages));
      fprintf('slider length: %d\n',get(handles.SliderTime, 'max'));
      
+     %yh add spindle annotation
+     if WindowTime+currentTime<=length(handles.SleepSpindles)
+        idx = [0:WindowTime]+currentTime;
+     elseif currentTime<=length(handles.SleepSpindles)
+        idx = [currentTime:length(handles.SleepSpindles)];
+     else
+         idx =[];
+     end
+     idx(idx>length(handles.SleepSpindles))=length(handles.SleepSpindles);
+     TempSpindle = handles.SleepSpindles(idx);
+     TempSpindle = TempSpindle - min(TempSpindle);
+     if max(TempSpindle)>0
+         TempSpindle = TempSpindle / max(TempSpindle) - 0.25;
+     end
+     starti=0;
+     for i= 1:numel(TempSpindle)
+        if TempSpindle(i)>0
+            if starti==0
+                starti=i;
+            end
+            x = [0 0 1 1 0]+i;
+            y = [0 5 5 0 0];
+            fill(x,y,'g','EdgeColor', 'none','FaceAlpha',0.5);        
+        end
+     end
+     if starti>0
+        text(starti,1.8,'Spindle','fontweight','bold');  
+     end
+     %end yh
      % comment for sleep stage
      if sum(abs(diff(Temp))>0)
          % there is more than one sleep state
@@ -1671,9 +1700,11 @@ try
 	handles.ScoredEvent = annObj.ScoredEvent;
     handles.EpochLength = annObj.EpochLength;
     handles.SleepStages = annObj.sleepStageValues; 
+    handles.SleepSpindles = annObj.sleepSpindleValues;
     fprintf('Event Number: %d\n', length(handles.ScoredEvent));
     fprintf('Epoch Length: %d\n', handles.EpochLength);
     fprintf('Stage Number: %d\n', length(handles.SleepStages));
+    fprintf('Spindle Number: %d\n', length(handles.SleepSpindles));
     
     if ~isempty(annObj.errMap) %annObj.errList
         % display errors
@@ -2172,7 +2203,7 @@ extendedControlPanelPos = ...
 
 handleArray = [handles.axes2, handles.ListBoxComments,...
         handles.pmAnnotations, handles.pushbutton1, handles.ListBoxPatientInfo,...
-        handles.text6, handles.text8];
+        handles.text6, handles.text8, handles.annotationbox];
 % controlArray = [handles.pushbutton1, handles.text6, handles.text8,...
 %     handles.TextInfo, handles.TextSignalValue, handles.pb_GoToStart,...
 %     handles.pbLeftEpochButton, handles.EditEpochNumber, ...
@@ -2568,6 +2599,19 @@ function handles = plotHistogram(hObject, handles)
     Temp = handles.SleepStages;
     Temp = [Temp, zeros(1,lightsOnNum)+5];
     plot(Temp, 'LineWidth', 1.5, 'color','k');
+    hold on
+    %yh add spindle annotation
+    TempSpindle = handles.SleepSpindles;
+    %fprintf('Spindle:%d',TempSpindle);
+    %plot(TempSpindle, 'LineWidth', 1.5, 'color','g');
+    for i= 1:numel(TempSpindle)
+        if TempSpindle(i)>0
+            x = [-1 -1 1 1 -1]+i;
+            y = [0 5 5 0 0];
+            handles.LineSleepStage =  fill(x,y,'r','EdgeColor', 'g','FaceAlpha',0.5);
+        end
+    end
+    %end yh
     hold on
       set(handles.axes2,'xTick',[0 get(handles.SliderTime, 'max')],...
                       'xlim',[0 get(handles.SliderTime, 'max')],...

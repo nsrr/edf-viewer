@@ -5,7 +5,8 @@ classdef loadPSGAnnotationClass
         % Input
         fileName = ''; % eg: '123.edf'   
         vendorName = ''; % eg: 'Embla'
-        sleepStageValues = []; 
+        sleepStageValues = [];
+        sleepSpindleValues = [];%yh add spindle info 10/16/17
         annotationType = ''; % eg: 'PSGAnnotation', 'CMPStudyConfig'
         isSDO = 0;
         
@@ -79,7 +80,7 @@ classdef loadPSGAnnotationClass
                 msg = sprintf('Could not open %s', filename);
                 error(msg);
             end
-            %----------------------------------------------- Resolve 'SDO'
+            %-----------------------------------------------  Resolve 'SDO'
             % Temp = fread(fid,[1 inf],'uint8'); % not efficient
             obj.isSDO = strfind(fileTxt,'SDO:');
             %-----------------------------------------------------
@@ -91,7 +92,7 @@ classdef loadPSGAnnotationClass
                 errMsg{end+1} = 'Failed to read XML file';
                 error('Failed to read XML file %s.',xmlfile);
             end
-            [ScoredEvent, SleepStageNames, EpochLength, obj.sleepStageValues] = ...
+            [ScoredEvent, SleepStageNames, EpochLength, obj.sleepStageValues, obj.sleepSpindleValues] = ...
                 parseAndValidateNodes(xdoc);            
            
             % Get event information
@@ -123,7 +124,7 @@ classdef loadPSGAnnotationClass
             fid = fclose(fid);
         
             %------------------------------------ Parse and validate nodes
-            function [ScoredEvent, SleepStageNames, EpochLength, SleepStageValues] = ...
+            function [ScoredEvent, SleepStageNames, EpochLength, SleepStageValues, SleepSpindleValues] = ...
                     parseAndValidateNodes(xmldoc)
                 fprintf('\n>>> Parsing annotation file... \n')
                 % Function parses each XML node
@@ -144,6 +145,7 @@ classdef loadPSGAnnotationClass
                 if events.getLength > 0
                     SleepStageNames = {};
                     SleepStageValues = [];
+                    SleepSpindleValues = [];
                     ScoredEvent = struct(...
                         'EventType', '', ...
                         'EventConcept', '', ...
@@ -199,6 +201,13 @@ classdef loadPSGAnnotationClass
                                 obj.EventStages{end+1} = eventConceptText;
                                 SleepStageNames{end+1} = eventConceptText;
                             end
+                            
+                            %yh add spindle annotation 10/12/17 uncomment if spindle if an event type
+                            %if strcmp(eventTypeText, 'Spindle') == 1
+                            %    obj.EventStages{end+1} = eventConceptText;
+                            %    sleepSpindleNames{end+1} = eventConceptText;
+                            %end
+                            %end yh 10/12/17
                             
                             if i ~= 0 %&& strcmp(eventTypeText, 'Stages') == 0
                                 try
@@ -266,6 +275,12 @@ classdef loadPSGAnnotationClass
                         else
                         end
                         
+                        %yh spindle annotation
+                        if strcmp('Sleep Spindle',tooltip)==1
+                            fprintf('sleep spindle name: %s', eventConceptText);
+                            SleepSpindleValues = [SleepSpindleValues, zeros(1,startNum-length(SleepSpindleValues)), zeros(1,durationNum)+5.2];
+                        end
+                        %end yh
                         ithScoredEvent = struct(...
                             'EventType', eventTypeText, ...
                             'EventConcept', eventConceptText, ...
